@@ -114,7 +114,7 @@ typedef enum {
 
 /* MIPI D_PHY WDR MODE defines */
 typedef enum {
-    HI_MIPI_WDR_MODE_NONE = 0x0,
+    HI_MIPI_WDR_MODE_NONE = 0x0, //线性模式。
     HI_MIPI_WDR_MODE_VC = 0x1, /* Virtual Channel */
     HI_MIPI_WDR_MODE_DT = 0x2, /* Data Type */
     HI_MIPI_WDR_MODE_DOL = 0x3, /* DOL Mode */
@@ -122,12 +122,12 @@ typedef enum {
 } mipi_wdr_mode_t;
 
 typedef struct {
-    data_type_t input_data_type; /* data type: 8/10/12/14/16 bit */
-    mipi_wdr_mode_t wdr_mode; /* MIPI WDR mode */
-    short lane_id[MIPI_LANE_NUM]; /* lane_id: -1 - disable */
+    data_type_t input_data_type; //传输的数据类型。
+    mipi_wdr_mode_t wdr_mode; //发送端(Sensor)和接收端(MIPI Rx) Lane的对应关系，未使用的Lane设置为-1。MIPI_LANE_NUM表示8。
+    short lane_id[MIPI_LANE_NUM]; //MIPI WDR模式。
 
     union {
-        short data_type[WDR_VC_NUM]; /* used by the HI_MIPI_WDR_MODE_DT */
+        short data_type[WDR_VC_NUM]; //当wdr_mode为 HI_MIPI_WDR_MODE_DT时，需要设置data_type，表示不同曝光长度数据对应的Data Type。WDR_VC_NUM表示4。
     };
 } mipi_dev_attr_t;
 
@@ -203,14 +203,15 @@ typedef struct {
 } lvds_dev_attr_t;
 
 typedef struct {
-    combo_dev_t devno; /* device number */
-    input_mode_t input_mode; /* input mode: MIPI/LVDS/SUBLVDS/HISPI/DC */
-    mipi_data_rate_t data_rate;
-    img_rect_t img_rect; /* MIPI Rx device crop area (corresponding to the oringnal sensor input image size) */
+
+    combo_dev_t devno;   // 设备编号 
+    input_mode_t input_mode;   // 输入模式：MIPI/LVDS/SUBLVDS/HISPI/DC 
+    mipi_data_rate_t data_rate;  // 接口传输速率。当前版本只支持1拍1像素，所以必须设置为MIPI_DATA_RATE_X1。
+    img_rect_t img_rect;       //图像裁剪区域。
 
     union {
-        mipi_dev_attr_t mipi_attr;
-        lvds_dev_attr_t lvds_attr;
+        mipi_dev_attr_t mipi_attr; //如果input_mode配置为INPUT_MODE_MIPI，则必须配置mipi_attr。
+        lvds_dev_attr_t lvds_attr; //如果input_mode配置为INPUT_MODE_SUBLVDS/ INPUT_MODE_LVDS/ INPUT_MODE_HISPI，则必须配置lvds_attr。
     };
 } combo_dev_attr_t;
 
