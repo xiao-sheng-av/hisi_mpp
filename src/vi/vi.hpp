@@ -5,11 +5,13 @@
 #include <unistd.h>     // close
 #include <iostream>
 #include "hi_common.h"
+#include "hi_comm_vi.h"
 #include "hi_comm_video.h"
 #include "hi_buffer.h"
 #include "hi_comm_vb.h"
 #include "mpi_vb.h"
 #include "mpi_sys.h"
+#include "mpi_vi.h"
 #include "hi_mipi.h"
 #define MIPI_DEV_NODE       "/dev/hi_mipi"
 
