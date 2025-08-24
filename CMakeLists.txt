@@ -10,7 +10,7 @@ set(SRC_DIRS
 )
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-add_executable(test test.cpp 
+add_executable(test ./src/test.cpp 
                     src/vi/vi.cpp)
 
 target_link_libraries(test mpi securec upvqe VoiceEngine dnvqe pthread)
