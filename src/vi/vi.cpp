@@ -2,6 +2,7 @@
 
 Hi_Mpp_Vi::Hi_Mpp_Vi()
 {
+    
 }
 
 Hi_Mpp_Vi::~Hi_Mpp_Vi()
@@ -10,6 +11,7 @@ Hi_Mpp_Vi::~Hi_Mpp_Vi()
     HI_MPI_SYS_Exit();
     HI_MPI_VB_ExitModCommPool(VB_UID_VI);
     HI_MPI_VB_Exit();
+    isp_stop();
 }
 
 bool Hi_Mpp_Vi::Init()
@@ -240,12 +242,111 @@ bool Hi_Mpp_Vi::Init()
         // Sharpen 使能开关。dv3516不支持该功能
         HI_FALSE,
         {-1, -1}};
-        //此处dev和pipe一样，所以直接用dev代替，还不知道dev和pipe关系
+    // 此处dev和pipe一样，所以直接用dev代替，还不知道dev和pipe关系
     ret = HI_MPI_VI_CreatePipe(dev, &PipeAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_CreatePipe failed!\n";
     }
 
+    VI_CHN_ATTR_S ChnAttr =
+        {
+            // 目标图像大小
+            {1920, 1080},
+            // 输出像素格式，静态属性，设置 CHN 时设定，不可更改。
+            PIXEL_FORMAT_YVU_SEMIPLANAR_420,
+            // 动态范围，静态属性，设置 CHN 时设定，不可更改。
+            DYNAMIC_RANGE_SDR8,
+            // 目标图像视频数据格式
+            VIDEO_FORMAT_LINEAR,
+            // 输出图像压缩模式
+            COMPRESS_MODE_NONE,
+            // Mirror 使能开关。
+            HI_FALSE,
+            // Flip 使能开关。
+            HI_FALSE,
+            // 用户获取图像的队列深度。
+            4,
+            // 帧率控制,当源帧率为-1 时，目标帧率必须为-1(不进行帧率控制)，其他情况下，目标帧率不能大于源帧率。
+            {-1, -1}};
+
+    ret = HI_MPI_VI_SetChnAttr(dev, 0, &ChnAttr);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "HI_MPI_VI_SetChnAttr failed!\n";
+        return HI_FAILURE;
+    }
+    VI_VPSS_MODE_E enMastPipeMode = vi_vpss_mode.aenMode[0];
+    if (VI_OFFLINE_VPSS_OFFLINE == enMastPipeMode || VI_ONLINE_VPSS_OFFLINE == enMastPipeMode || VI_PARALLEL_VPSS_OFFLINE == enMastPipeMode)
+    {
+        ret = HI_MPI_VI_EnableChn(dev, 0);
+
+        if (ret != HI_SUCCESS)
+        {
+            std::cout << "HI_MPI_VI_EnableChn failed!\n";
+            return HI_FAILURE;
+        }
+    }
+    std::cout << "mode = " << enMastPipeMode << std::endl;
+    ISP_PUB_ATTR_S PubAttr =
+        {
+            // 裁剪窗口起始位置和图像宽高，必须设置为与vi pipe属性中的size保持一致，且不能比所绑定的dev属性中的宽高大，如果配置不符，会导致出图异常。
+            {0, 0, 1920, 1080},
+            // Sensor输出的图像宽高。
+            {1920, 1080},
+            // 输入图像帧率，取值范围为(0.00, 65535.00]。
+            30,
+            // Bayer数据格式。BAYER_RGGB表示RGGB排列方式。
+            BAYER_RGGB,
+            // WDR模式选择。
+            WDR_MODE_NONE,
+            // 用于进行Sensor初始化序列的选择，在分辨率和帧率相同时，配置不同的sns_mode对应不同的初始化序列；其他情况，sns_mode默认配置为0，可通过sns_size和frame_rate进行初始化序列的选择。
+            0,
+        };
+
+    const ISP_SNS_OBJ_S *pstSnsObj = &stSnsGc2053Obj;
+    ALG_LIB_S stAeLib;
+    ALG_LIB_S stAwbLib;
+    stAeLib.s32Id = dev;
+    stAwbLib.s32Id = dev;
+    strncpy(stAeLib.acLibName, HI_AE_LIB_NAME, sizeof(HI_AE_LIB_NAME));
+    strncpy(stAwbLib.acLibName, HI_AWB_LIB_NAME, sizeof(HI_AWB_LIB_NAME));
+    ret = pstSnsObj->pfnRegisterCallback(dev, &stAeLib, &stAwbLib);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "sensor_register_callback failed!\n";
+    }
+    ISP_SNS_COMMBUS_U uSnsBusInfo;
+    uSnsBusInfo.s8I2cDev = dev;
+    ret = pstSnsObj->pfnSetBusInfo(dev, uSnsBusInfo);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "set sensor bus info failed!\n";
+    }
+    //此处是设置sensro,
+    ret = HI_MPI_ISP_MemInit(dev);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "Init Ext memory failed!\n";
+    }
+
+    ret = HI_MPI_ISP_SetPubAttr(dev, &PubAttr);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "SetPubAttr failed!\n";
+    }
+    ret = HI_MPI_ISP_Init(dev);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "ISP Init failed!\n";
+    }
+    //启动isp，该函数为阻塞，所以需要一个线程去运行
+    isp_thread = std::thread(HI_MPI_ISP_Run, dev);
     return true;
+}
+
+void Hi_Mpp_Vi::isp_stop()
+{
+    HI_MPI_ISP_Exit(dev);
+    isp_thread.join();
 }
