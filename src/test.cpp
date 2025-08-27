@@ -15,13 +15,14 @@ int main()
     {
         return -1;
     }
+    sleep(2);
     for (int i = 0; i < 30; i++)
     {
         VIDEO_FRAME_INFO_S stFrameInfom;
-        HI_U32 ret = HI_MPI_VPSS_GetChnFrame(0, 0, &stFrameInfom, 30);
+        HI_U32 ret = HI_MPI_VPSS_GetChnFrame(0, 0, &stFrameInfom, 80);
         if (HI_SUCCESS != ret)
         {
-            std::cout << "get frame false  ret = " << ret << std::endl ;
+            std::cout << std::hex << "get frame false  ret = " << ret << std::endl ;
         }
         std::cout << "i = " << i << std::endl;
         ret = HI_MPI_VPSS_ReleaseChnFrame(0, 0, &stFrameInfom);
