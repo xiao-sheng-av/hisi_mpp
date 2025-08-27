@@ -15,11 +15,14 @@ int main()
     {
         return -1;
     }
+    VPSS_CHN_ATTR_S stChnAttr;
+    stChnAttr.u32Depth = 2;
+    HI_MPI_VPSS_SetChnAttr(0, 0, &stChnAttr);
     sleep(2);
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 3000; i++)
     {
         VIDEO_FRAME_INFO_S stFrameInfom;
-        HI_U32 ret = HI_MPI_VPSS_GetChnFrame(0, 0, &stFrameInfom, 80);
+        HI_U32 ret = HI_MPI_VPSS_GetChnFrame(0, 0, &stFrameInfom, -1);
         if (HI_SUCCESS != ret)
         {
             std::cout << std::hex << "get frame false  ret = " << ret << std::endl ;
