@@ -29,6 +29,7 @@ bool Hi_Mpp_Vpss::Init()
     VPSS_CHN_ATTR_S VpssChnAttr;
     VpssChnAttr.u32Width = 1920;
     VpssChnAttr.u32Height = 1080;
+    //修改为user模式
     VpssChnAttr.enChnMode = VPSS_CHN_MODE_USER;
     VpssChnAttr.enCompressMode = COMPRESS_MODE_NONE;
     VpssChnAttr.enDynamicRange = DYNAMIC_RANGE_SDR8;

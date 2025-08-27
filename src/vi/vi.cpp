@@ -25,7 +25,7 @@ bool Hi_Mpp_Vi::Init()
     vb_config.u32MaxPoolCnt = 1;
     // 获取一帧图像总大小                                                此处使用SEG格式不知是否是为了演示他具有这个格式，稍后用默认模式看看
     vb_config.astCommPool[0].u64BlkSize = COMMON_GetPicBufferSize(width, height, PIXEL_FORMAT_YUV_SEMIPLANAR_420,
-                                                                  DATA_BITWIDTH_8, COMPRESS_MODE_SEG, DEFAULT_ALIGN);
+                                                                  DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
     // 缓存池中缓冲块个数
     vb_config.astCommPool[0].u32BlkCnt = 10;
     // 设置缓存池属性
@@ -136,6 +136,7 @@ bool Hi_Mpp_Vi::Init()
     {
         std::cout << "Get VI-VPSS mode Param failed\n";
     }
+    vi_vpss_mode.aenMode[0] = VI_ONLINE_VPSS_ONLINE;
     // 设置VI_VPSS模式
     ret = HI_MPI_SYS_SetVIVPSSMode(&vi_vpss_mode);
     if (HI_SUCCESS != ret)
