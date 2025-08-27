@@ -87,23 +87,24 @@ bool Hi_Mpp_Vi::Init()
     // 修改此处为1，对应dev1
     sns_clk_source_t SnsDev = 1;
 
-        ret = ioctl(fd, HI_MIPI_ENABLE_SENSOR_CLOCK, &SnsDev);
-        if (HI_SUCCESS != ret)
-        {
-            std::cout << "HI_MIPI_ENABLE_SENSOR_CLOCK failed\n";
-        }
- 
+    ret = ioctl(fd, HI_MIPI_ENABLE_SENSOR_CLOCK, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_ENABLE_SENSOR_CLOCK failed\n";
+    }
+
     // 复位sensor
 
-        ret = ioctl(fd, HI_MIPI_RESET_SENSOR, &SnsDev);
-        if (HI_SUCCESS != ret)
-        {
-            std::cout << "HI_MIPI_RESET_SENSOR failed\n";
-        }
+    ret = ioctl(fd, HI_MIPI_RESET_SENSOR, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_RESET_SENSOR failed\n";
+    }
 
     // 设置MIPI Rx、SLVS和并口设备属性。此处可能和mipi口有关，待观察
     combo_dev_attr_t stcomboDevAttr =
         {
+            
             .devno = 1,
             .input_mode = INPUT_MODE_MIPI,
             .data_rate = MIPI_DATA_RATE_X1,
@@ -128,11 +129,11 @@ bool Hi_Mpp_Vi::Init()
         std::cout << "HI_MIPI_UNRESET_MIPI failed\n";
     }
     // 撤销复位Sensor。
-        ret = ioctl(fd, HI_MIPI_UNRESET_SENSOR, &SnsDev);
-        if (HI_SUCCESS != ret)
-        {
-            std::cout << "HI_MIPI_UNRESET_SENSOR failed\n";
-        }
+    ret = ioctl(fd, HI_MIPI_UNRESET_SENSOR, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_UNRESET_SENSOR failed\n";
+    }
 
     close(fd);
 
