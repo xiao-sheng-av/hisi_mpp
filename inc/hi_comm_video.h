@@ -49,7 +49,9 @@ typedef enum hiVB_SOURCE_E {
 } VB_SOURCE_E;
 
 typedef enum hiDATA_RATE_E {
+    // 一拍一像素
     DATA_RATE_X1 = 0,         /* RW; output 1 pixel per clock */
+    // 一拍两像素
     DATA_RATE_X2 = 1,         /* RW; output 2 pixel per clock */
 
     DATA_RATE_BUTT

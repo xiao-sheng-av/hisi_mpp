@@ -343,7 +343,9 @@ typedef struct hiVI_BAS_ATTR_S {
 
 /* Attribute of wdr */
 typedef struct hiVI_WDR_ATTR_S {
+    // WDR 工作模式，分为帧模式、行模式、非WDR 等三大类.
     WDR_MODE_E  enWDRMode;          /* RW; WDR mode. */
+    // 在线行模式 WDR，离线 PIPE 数据缓存的行数。取值范围为[1，PIPE 的图像高度 u32MaxH]。根据带宽的使用情况和 sensor 的曝光行差等因素来调节到合适值。
     HI_U32      u32CacheLine;       /* RW; WDR cache line. */
 } VI_WDR_ATTR_S;
 
@@ -386,35 +388,43 @@ typedef struct hiVI_DEV_ATTR_EX_S {
 
 /* The attributes of a VI device */
 typedef struct hiVI_DEV_ATTR_S {
+    // 接口模式
     VI_INTF_MODE_E      enIntfMode;                     /* RW;Interface mode */
+    // 视频设备的复合工作模式。
     VI_WORK_MODE_E      enWorkMode;                     /* RW;Work mode */
-
+    /*分量掩码配置。当enIntfMode=VI_MODE_BT1120_STANDARD 时，需要配置 Y（对应该变量数组的 0 下标）和 C（对应该变量数组的 1 下标）的分量掩码，
+    其他模式时配置单分量掩码（对应该变量数组的 0 下标），另一个分量（对应该变量数组的 1 下标）配成 0x0。*/
     HI_U32              au32ComponentMask[VI_COMPMASK_NUM];  /* RW;Component mask */
+    // 输入扫描模式 (逐行、隔行)。VI_SCAN_PROGRESSIVE表示为逐行
     VI_SCAN_MODE_E      enScanMode;                     /* RW;Input scanning mode (progressive or interlaced) */
+    // 此参数无意义
     HI_S32              as32AdChnId[VI_MAX_ADCHN_NUM];  /* RW;AD channel ID. Typically, the default value -1
                                                         is recommended */
-
+    /* 以下成员必须在BT.601模式或DC模式下进行配置，在其他模式下无效 */
     /* The below members must be configured in BT.601 mode or DC mode and are invalid in other modes */
+    // 输入数据顺序 (仅支持 yuv 格式)。
     VI_YUV_DATA_SEQ_E   enDataSeq;                      /* RW;Input data sequence (only the YUV format is supported) */
+    // 同步时序配置，BT.601 和 DC 模式时必须配置，其它模式时无效。
     VI_SYNC_CFG_S       stSynCfg;                       /* RW;Sync timing. This member must be configured in BT.
                                                         601 mode or DC mode */
-
+    // 输入数据类型，Sensor 输入一般为 RGB，AD 输入一般为YUV。
     VI_DATA_TYPE_E      enInputDataType;                /* RW;RGB: CSC-709 or CSC-601, PT YUV444 disable; YUV: default
                                                         yuv CSC coef PT YUV444 enable. */
 
     HI_BOOL             bDataReverse;                   /* RW;Data reverse */
-
+    // VI 设备可设置要捕获图像的高宽。
     SIZE_S              stSize;                         /* RW;Input size */
-
+    // Bayer 域缩放之后的宽、高，以及相位调整的类型。
     VI_BAS_ATTR_S       stBasAttr;                      /* RW;Attribute of BAS */
-
+    // WDR 属性。
     VI_WDR_ATTR_S       stWDRAttr;                      /* RW;Attribute of WDR */
-
+    // 设备的速率。
     DATA_RATE_E         enDataRate;                     /* RW;Data rate of Device */
 } VI_DEV_ATTR_S;
 
 /* Information of pipe binded to device */
 typedef struct hiVI_DEV_BIND_PIPE_S {
+    // 该 VI Dev 所绑定的 PIPE 数目，取值范围[1,VI_MAX_PIPE_NUM]。
     HI_U32  u32Num;                                     /* RW;Range [1,VI_MAX_PHY_PIPE_NUM] */
     VI_PIPE PipeId[VI_MAX_PHY_PIPE_NUM];                /* RW;Array of pipe ID */
 } VI_DEV_BIND_PIPE_S;
@@ -445,17 +455,29 @@ typedef struct hiVI_NR_ATTR_S {
 
 /* The attributes of pipe */
 typedef struct hiVI_PIPE_ATTR_S {
+    // VI PIPE 的 Bypass 模式。VI的数据是否经过FE和BE处理，VI_PIPE_BYPASS_NONE表示不处理，静态属性，创建 PIPE 时设定，不可更改。
     VI_PIPE_BYPASS_MODE_E enPipeBypassMode;
+    // 是否关闭下采样和 CSC。HI_FALSE：yuv skip 不使能HI_TRUE：yuv skip 使能。静态属性，创建 PIPE 时设定，不可更改。
     HI_BOOL               bYuvSkip;               /* RW;YUV skip enable */
+    // ISP 是否 bypass。HI_FALSE：ISP 正常运行。HI_TRUE：ISP bypass，不运行 ISP。静态属性，创建 PIPE 时设定，不可更改。
     HI_BOOL               bIspBypass;             /* RW;Range:[0, 1];ISP bypass enable */
+    // 输入图像宽度。静态属性，创建 PIPE 时设定，不可更改。
     HI_U32                u32MaxW;                /* RW;Range[VI_PIPE_MIN_WIDTH, VI_PIPE_MAX_WIDTH];Maximum width */
+    // 输入图像高度。静态属性，创建 PIPE 时设定，不可更改。
     HI_U32                u32MaxH;                /* RW;Range[VI_PIPE_MIN_HEIGHT, VI_PIPE_MAX_HEIGHT];Maximum height */
+    // 像素格式。  enPixFmt
     PIXEL_FORMAT_E        enPixFmt;               /* RW;Pixel format */
+    // 视频压缩格式
     COMPRESS_MODE_E       enCompressMode;         /* RW;Range:[0, 4];Compress mode. */
+    // 输入图像的 bit 位宽。静态属性，创建 PIPE 时设定，不可更改，仅当像素格式enPixFmt 为 YUV 像素格式时效 。
     DATA_BITWIDTH_E       enBitWidth;             /* RW;Range:[0, 4];Bit width */
+    // NR 使能开关。还不知道是啥注意：Hi3519AV100/Hi3516EV200 不支持 NR 功能，此参数无意义。
     HI_BOOL               bNrEn;                  /* RW;Range:[0, 1];3DNR enable */
+    // NR 属性结构体。静态属性，创建 PIPE 时设定，不可更改。注意：Hi3519AV100/Hi3516EV200 不支持 NR 功能，此参数无意义。
     VI_NR_ATTR_S          stNrAttr;               /* RW;Attribute of 3DNR */
+    // Sharpen 使能开关。dv3516不支持该功能
     HI_BOOL               bSharpenEn;             /* RW;Range:[0, 1];Sharpen enable */
+    // 帧率控制。
     FRAME_RATE_CTRL_S     stFrameRate;            /* RW;Frame rate */
     HI_BOOL               bDiscardProPic;         /* RW;Range:[0, 1];when professional mode snap, whether to discard
                                                 long exposure picture in the video pipe. */

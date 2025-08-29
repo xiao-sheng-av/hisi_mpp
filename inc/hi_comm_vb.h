@@ -66,21 +66,30 @@ typedef HI_U32 VB_BLK;
 #define RESERVE_MMZ_NAME               "window"
 
 typedef enum hiVB_REMAP_MODE_E {
+    //VB 不映射内核态虚拟地址。
     VB_REMAP_MODE_NONE = 0, /* no remap */
+    //VB 映射 nocache 属性的内核态虚拟地址。
     VB_REMAP_MODE_NOCACHE = 1, /* no cache remap */
+    //VB 映射 cached 属性的内核态虚拟地址
     VB_REMAP_MODE_CACHED = 2, /* cache remap, if you use this mode, you should flush cache by yourself */
     VB_REMAP_MODE_BUTT
 } VB_REMAP_MODE_E;
 
 typedef struct hiVB_POOL_CONFIG_S {
+    //缓存块大小
     HI_U64 u64BlkSize;
+    //缓存块个数
     HI_U32 u32BlkCnt;
+    //VB 的内核态虚拟地址映射模式。
     VB_REMAP_MODE_E enRemapMode;
+    //当前缓存池从哪个 MMZ 区域分配内存。
     HI_CHAR acMmzName[MAX_MMZ_NAME_LEN];
 } VB_POOL_CONFIG_S;
 
 typedef struct hiVB_CONFIG_S {
+    //整个系统中可容纳的缓存池个数。静态属性
     HI_U32 u32MaxPoolCnt;
+    //公共缓存池属性结构体。
     VB_POOL_CONFIG_S astCommPool[VB_MAX_COMM_POOLS];
 } VB_CONFIG_S;
 
