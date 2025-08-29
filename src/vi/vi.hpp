@@ -24,8 +24,12 @@ class Hi_Mpp_Vi
 {
 private:
     HI_U32 ret = 0;
-    //VI设备号，与MIPI设备绑定关系是固定的,这里我插入的是Hi3516的MIPI1
+    //VI设备号
     VI_DEV dev = 1;
+    //pipe号
+    VI_PIPE pipe_id = 0;
+    //管道号, 3516dv300只有通道0
+    VI_CHN chn_id = 0;
     //宽
     HI_U32 width = 1920;
     //高
