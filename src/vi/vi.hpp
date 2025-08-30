@@ -25,17 +25,17 @@ class Hi_Mpp_Vi
 private:
     HI_U32 ret = 0;
     //VI设备号
-    VI_DEV dev = 1;
+    VI_DEV Dev = 1;
     //pipe号
-    VI_PIPE pipe_id = 0;
+    VI_PIPE Pipe_Id = 0;
     //管道号, 3516dv300只有通道0
-    VI_CHN chn_id = 0;
+    VI_CHN Chn_Id = 0;
     //宽
-    HI_U32 width = 1920;
+    HI_U32 Width = 1920;
     //高
-    HI_U32 height = 1080;
+    HI_U32 Height = 1080;
     //缓存池设置
-    VB_CONFIG_S vb_config = {0};
+    VB_CONFIG_S Vb_Config = {0};
     //isp运行线程
     std::thread isp_thread;
 public:
@@ -43,6 +43,9 @@ public:
     ~Hi_Mpp_Vi();
     bool Init();
     void isp_stop();
+    HI_S32 GetPipeId() { return Pipe_Id; }
+    HI_S32 GetChnId() { return Chn_Id; }
+    void SetPipeId(HI_S32 id) { Pipe_Id = id; }
 };
 
 

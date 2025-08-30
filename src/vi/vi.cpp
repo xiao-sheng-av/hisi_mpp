@@ -2,7 +2,7 @@
 
 Hi_Mpp_Vi::Hi_Mpp_Vi()
 {
-    pipe_id = dev;
+    
 }
 
 Hi_Mpp_Vi::~Hi_Mpp_Vi()
@@ -22,14 +22,14 @@ bool Hi_Mpp_Vi::Init()
     // 去初始化MPP视频缓存池
     HI_MPI_VB_Exit();
     // 设置缓存池个数为1
-    vb_config.u32MaxPoolCnt = 1;
+    Vb_Config.u32MaxPoolCnt = 1;
     // 获取一帧图像总大小                                                此处使用SEG格式不知是否是为了演示他具有这个格式，稍后用默认模式看看
-    vb_config.astCommPool[0].u64BlkSize = COMMON_GetPicBufferSize(width, height, PIXEL_FORMAT_YVU_SEMIPLANAR_420,
+    Vb_Config.astCommPool[0].u64BlkSize = COMMON_GetPicBufferSize(Width, Height, PIXEL_FORMAT_YVU_SEMIPLANAR_420,
                                                                   DATA_BITWIDTH_8, COMPRESS_MODE_SEG, DEFAULT_ALIGN);
     // 缓存池中缓冲块个数
-    vb_config.astCommPool[0].u32BlkCnt = 10;
+    Vb_Config.astCommPool[0].u32BlkCnt = 10;
     // 设置缓存池属性
-    ret = HI_MPI_VB_SetConfig(&vb_config);
+    ret = HI_MPI_VB_SetConfig(&Vb_Config);
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MPI_VB_SetConfig Fail ret = " << ret << std::endl;
@@ -70,7 +70,7 @@ bool Hi_Mpp_Vi::Init()
     }
 
     // 设置时钟
-    combo_dev_t mipidev = dev;
+    combo_dev_t mipidev = Dev;
 
     ret = ioctl(fd, HI_MIPI_ENABLE_MIPI_CLOCK, &mipidev);
     if (HI_SUCCESS != ret)
@@ -79,7 +79,7 @@ bool Hi_Mpp_Vi::Init()
     }
 
     // 复位MIPI
-    ret = ioctl(fd, HI_MIPI_RESET_MIPI, &dev);
+    ret = ioctl(fd, HI_MIPI_RESET_MIPI, &Dev);
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_RESET_MIPI failed\n";
@@ -87,7 +87,7 @@ bool Hi_Mpp_Vi::Init()
 
     // 使能摄像头时钟
     // 修改此处为1，对应dev = 1
-    sns_clk_source_t SnsDev = dev;
+    sns_clk_source_t SnsDev = Dev;
 
     ret = ioctl(fd, HI_MIPI_ENABLE_SENSOR_CLOCK, &SnsDev);
     if (HI_SUCCESS != ret)
@@ -122,7 +122,7 @@ bool Hi_Mpp_Vi::Init()
         std::cout << "HI_MIPI_SET_DEV_ATTR failed\n";
     }
     // 撤销复位MIPI Rx
-    ret = ioctl(fd, HI_MIPI_UNRESET_MIPI, &dev);
+    ret = ioctl(fd, HI_MIPI_UNRESET_MIPI, &Dev);
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_UNRESET_MIPI failed\n";
@@ -197,7 +197,7 @@ bool Hi_Mpp_Vi::Init()
         // 一拍一像素
         DATA_RATE_X1};
     /*不支持 BT.1120 隔行输入。在调用前要保证 VI 设备处于禁用状态。如果 VI 设备已处于使能状态，可以使用HI_MPI_VI_DisableDev 来禁用设备。*/
-    ret = HI_MPI_VI_SetDevAttr(dev, &ViDevAttr);
+    ret = HI_MPI_VI_SetDevAttr(Dev, &ViDevAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetDevAttr failed!\n";
@@ -207,7 +207,7 @@ bool Hi_Mpp_Vi::Init()
       可重复启用，不返回失败。
       Hi3516CV500 在同一时刻只支持启动一个 VI DEV。
       Hi3516DV300/Hi3559V200/Hi3556V200 支持同时启动两个 VI DEV */
-    ret = HI_MPI_VI_EnableDev(dev);
+    ret = HI_MPI_VI_EnableDev(Dev);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_EnableDev failed!\n";
@@ -218,9 +218,9 @@ bool Hi_Mpp_Vi::Init()
     // 该 VI Dev 所绑定的 PIPE 数目
     DevBindPipe.u32Num = 1;
     // 该 VI Dev 绑定的 PIPE 号。
-    DevBindPipe.PipeId[0] = pipe_id;
+    DevBindPipe.PipeId[0] = Pipe_Id;
     // 必须先使能 VI 设备后才能绑定物理 PIPE。不支持动态绑定。
-    ret = HI_MPI_VI_SetDevBindPipe(dev, &DevBindPipe);
+    ret = HI_MPI_VI_SetDevBindPipe(Dev, &DevBindPipe);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetDevBindPipe failed!\n";
@@ -260,17 +260,17 @@ bool Hi_Mpp_Vi::Init()
     // 只有PIPE0 支持并行模式。
     // 物理 PIPE 属性中的 u32MaxW、u32MaxH、enPixFmt、enBitWidth 等必须与前端进入 VI 的时序设置保持一致，否则会出现错误。
     // 不支持重复创建。
-    ret = HI_MPI_VI_CreatePipe(pipe_id, &PipeAttr);
+    ret = HI_MPI_VI_CreatePipe(Pipe_Id, &PipeAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_CreatePipe failed!\n";
     }
     // PIPE 必须已创建
-    ret = HI_MPI_VI_StartPipe(pipe_id);
+    ret = HI_MPI_VI_StartPipe(Pipe_Id);
     if (ret != HI_SUCCESS)
     {
         // 销毁一个PIPE
-        HI_MPI_VI_DestroyPipe(pipe_id);
+        HI_MPI_VI_DestroyPipe(Pipe_Id);
         std::cout << "HI_MPI_VI_StartPipe failed!\n";
     }
     // VI 通道属性
@@ -295,7 +295,7 @@ bool Hi_Mpp_Vi::Init()
             // 帧率控制,当源帧率为-1 时，目标帧率必须为-1(不进行帧率控制)，其他情况下，目标帧率不能大于源帧率。
             {-1, -1}};
     // 设置VI通道属性，3516dv300只有通道0
-    ret = HI_MPI_VI_SetChnAttr(pipe_id, chn_id, &ChnAttr);
+    ret = HI_MPI_VI_SetChnAttr(Pipe_Id, Chn_Id, &ChnAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetChnAttr failed!\n";
@@ -305,7 +305,7 @@ bool Hi_Mpp_Vi::Init()
     if (VI_OFFLINE_VPSS_OFFLINE == enMastPipeMode || VI_ONLINE_VPSS_OFFLINE == enMastPipeMode || VI_PARALLEL_VPSS_OFFLINE == enMastPipeMode)
     {
         // PIPE 必须已创建，否则会返回失败。必须先设置通道属性。上面三个模式启动VI通道不生效，直接返回成功。
-        ret = HI_MPI_VI_EnableChn(pipe_id, chn_id);
+        ret = HI_MPI_VI_EnableChn(Pipe_Id, Chn_Id);
 
         if (ret != HI_SUCCESS)
         {
@@ -317,26 +317,26 @@ bool Hi_Mpp_Vi::Init()
     const ISP_SNS_OBJ_S *pstSnsObj = &stSnsGc2053Obj;
     ALG_LIB_S stAeLib;
     ALG_LIB_S stAwbLib;
-    stAeLib.s32Id = pipe_id;
-    stAwbLib.s32Id = pipe_id;
+    stAeLib.s32Id = Pipe_Id;
+    stAwbLib.s32Id = Pipe_Id;
     strncpy(stAeLib.acLibName, HI_AE_LIB_NAME, sizeof(HI_AE_LIB_NAME));
     strncpy(stAwbLib.acLibName, HI_AWB_LIB_NAME, sizeof(HI_AWB_LIB_NAME));
-    ret = pstSnsObj->pfnRegisterCallback(pipe_id, &stAeLib, &stAwbLib);
+    ret = pstSnsObj->pfnRegisterCallback(Pipe_Id, &stAeLib, &stAwbLib);
     if (ret != HI_SUCCESS)
     {
         std::cout << "sensor_register_callback failed!\n";
     }
 
     ISP_SNS_COMMBUS_U uSnsBusInfo;
-    uSnsBusInfo.s8I2cDev = dev;
-    ret = pstSnsObj->pfnSetBusInfo(pipe_id, uSnsBusInfo);
+    uSnsBusInfo.s8I2cDev = Dev;
+    ret = pstSnsObj->pfnSetBusInfo(Pipe_Id, uSnsBusInfo);
     if (ret != HI_SUCCESS)
     {
         std::cout << "set sensor bus info failed!\n";
     }
 
     // 此处是设置sensro,
-    ret = HI_MPI_ISP_MemInit(pipe_id);
+    ret = HI_MPI_ISP_MemInit(Pipe_Id);
     if (ret != HI_SUCCESS)
     {
         std::cout << "Init Ext memory failed!\n";
@@ -357,23 +357,23 @@ bool Hi_Mpp_Vi::Init()
             // 用于进行Sensor初始化序列的选择，在分辨率和帧率相同时，配置不同的sns_mode对应不同的初始化序列；其他情况，sns_mode默认配置为0，可通过sns_size和frame_rate进行初始化序列的选择。
             0,
         };
-    ret = HI_MPI_ISP_SetPubAttr(pipe_id, &PubAttr);
+    ret = HI_MPI_ISP_SetPubAttr(Pipe_Id, &PubAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "SetPubAttr failed!\n";
     }
-    ret = HI_MPI_ISP_Init(pipe_id);
+    ret = HI_MPI_ISP_Init(Pipe_Id);
     if (ret != HI_SUCCESS)
     {
         std::cout << "ISP Init failed!\n";
     }
     // 启动isp，该函数为阻塞，所以需要一个线程去运行
-    isp_thread = std::thread(HI_MPI_ISP_Run, pipe_id);
+    isp_thread = std::thread(HI_MPI_ISP_Run, Pipe_Id);
     return true;
 }
 
 void Hi_Mpp_Vi::isp_stop()
 {
-    HI_MPI_ISP_Exit(pipe_id);
+    HI_MPI_ISP_Exit(Pipe_Id);
     isp_thread.join();
 }
