@@ -2,7 +2,7 @@
 
 Hi_Mpp_Vi::Hi_Mpp_Vi()
 {
-    
+
 }
 
 Hi_Mpp_Vi::~Hi_Mpp_Vi()
@@ -263,7 +263,7 @@ bool Hi_Mpp_Vi::Init()
     ret = HI_MPI_VI_CreatePipe(Pipe_Id, &PipeAttr);
     if (ret != HI_SUCCESS)
     {
-        std::cout << "HI_MPI_VI_CreatePipe failed!\n";
+        std::cout << "HI_MPI_VI_CreatePipe failed!" << std::hex << ret << std::dec << std::endl;
     }
     // PIPE 必须已创建
     ret = HI_MPI_VI_StartPipe(Pipe_Id);
