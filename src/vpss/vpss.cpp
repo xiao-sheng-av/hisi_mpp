@@ -42,13 +42,13 @@ bool Hi_Mpp_Vpss::Init()
     VpssChnAttr.bMirror = HI_FALSE;
     VpssChnAttr.bFlip = HI_FALSE;
     VpssChnAttr.stAspectRatio.enMode = ASPECT_RATIO_NONE;
-    ret = HI_MPI_VPSS_SetChnAttr(VpssGrp, 0, &VpssChnAttr);
+    ret = HI_MPI_VPSS_SetChnAttr(VpssGrp, VpssChn, &VpssChnAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_SetChnAttr failed!\n";
     }
 
-    ret = HI_MPI_VPSS_EnableChn(VpssGrp, 0);
+    ret = HI_MPI_VPSS_EnableChn(VpssGrp, VpssChn);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_EnableChn failed!\n";
@@ -59,18 +59,24 @@ bool Hi_Mpp_Vpss::Init()
     {
         std::cout << "HI_MPI_VPSS_StartGrp failed!\n";
     }
+    return true;
+}
+
+bool Hi_Mpp_Vpss::Vpss_Bind_Vi(HI_S32 Pipe_Id, HI_S32 Chn_Id)
+{
     MPP_CHN_S stSrcChn;
     MPP_CHN_S stDestChn;
     stSrcChn.enModId   = HI_ID_VI;
-    stSrcChn.s32DevId  = 1;
-    stSrcChn.s32ChnId  = 0;
+    stSrcChn.s32DevId  = Pipe_Id;    // 此处是PIPE号
+    stSrcChn.s32ChnId  = Chn_Id;    
     stDestChn.enModId  = HI_ID_VPSS;
     stDestChn.s32DevId = VpssGrp;
-    stDestChn.s32ChnId = 0;
+    stDestChn.s32ChnId = VpssChn;
     ret = HI_MPI_SYS_Bind(&stSrcChn, &stDestChn);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_SYS_Bind failed!\n";
+        return false;
     }
     return true;
 }
