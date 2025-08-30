@@ -426,6 +426,7 @@ typedef struct hiVI_DEV_ATTR_S {
 typedef struct hiVI_DEV_BIND_PIPE_S {
     // 该 VI Dev 所绑定的 PIPE 数目，取值范围[1,VI_MAX_PIPE_NUM]。
     HI_U32  u32Num;                                     /* RW;Range [1,VI_MAX_PHY_PIPE_NUM] */
+    
     VI_PIPE PipeId[VI_MAX_PHY_PIPE_NUM];                /* RW;Array of pipe ID */
 } VI_DEV_BIND_PIPE_S;
 
