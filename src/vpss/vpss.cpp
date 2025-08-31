@@ -1,6 +1,7 @@
 #include "vpss.hpp"
 Hi_Mpp_Vpss::Hi_Mpp_Vpss()
 {
+    Out_File = fopen("out.yuv", "wb");
 }
 
 Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
@@ -9,6 +10,7 @@ Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
 
 bool Hi_Mpp_Vpss::Init()
 {
+
     VPSS_GRP_ATTR_S stVpssGrpAttr;
     memset_s(&stVpssGrpAttr, sizeof(VPSS_GRP_ATTR_S), 0, sizeof(VPSS_GRP_ATTR_S));
     // 不进行帧率控制
@@ -41,7 +43,7 @@ bool Hi_Mpp_Vpss::Init()
     VpssChnAttr.u32Width = 1920;
     // 高
     VpssChnAttr.u32Height = 1080;
-    //修改为user模式才能从VPSS中获取frame
+    // 修改为user模式才能从VPSS中获取frame
     VpssChnAttr.enChnMode = VPSS_CHN_MODE_USER;
     // 目标图像压缩模式。
     VpssChnAttr.enCompressMode = COMPRESS_MODE_NONE;
@@ -54,7 +56,7 @@ bool Hi_Mpp_Vpss::Init()
     // 组帧率。
     VpssChnAttr.stFrameRate.s32SrcFrameRate = 30;
     VpssChnAttr.stFrameRate.s32DstFrameRate = 30;
-    //此处要修改为大于0才能从VPSS中获取frame
+    // 此处要修改为大于0才能从VPSS中获取frame
     VpssChnAttr.u32Depth = 4;
     // 水平镜像使能。
     VpssChnAttr.bMirror = HI_FALSE;
@@ -83,19 +85,19 @@ bool Hi_Mpp_Vpss::Init()
     return true;
 }
 
-bool Hi_Mpp_Vpss::Vpss_Bind_Vi(HI_S32 Pipe_Id, HI_S32 Chn_Id)
+bool Hi_Mpp_Vpss::Vpss_Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
 {
     MPP_CHN_S stSrcChn;
     MPP_CHN_S stDestChn;
     // VI 和 VDEC 作为数据源，是以通道为发送者，向其他模块发送数据，用户将设备号置为 0，SDK 不检查输入的设备号。
     // 例程中两个都赋值，并没有将dev赋值为0
-    stSrcChn.enModId   = HI_ID_VI;
-    stSrcChn.s32DevId  = Pipe_Id;    
-    stSrcChn.s32ChnId  = Chn_Id;     // 通道号
+    stSrcChn.enModId = HI_ID_VI;
+    stSrcChn.s32DevId = Pipe_Id;
+    stSrcChn.s32ChnId = Chn_Id; // 通道号
     // VPSS 作为数据接收者时，是以设备（GROUP）为接收者，接收其他模块发来的数据，用户将通道号置为 0。
-    stDestChn.enModId  = HI_ID_VPSS;
-    stDestChn.s32DevId = VpssGrp;    // VPSS池号
-    stDestChn.s32ChnId = 0;    // VPSS通道号   
+    stDestChn.enModId = HI_ID_VPSS;
+    stDestChn.s32DevId = VpssGrp; // VPSS池号
+    stDestChn.s32ChnId = 0;       // VPSS通道号
     // 同一个数据接收者只能绑定一个数据源。
     ret = HI_MPI_SYS_Bind(&stSrcChn, &stDestChn);
     if (ret != HI_SUCCESS)
@@ -103,5 +105,31 @@ bool Hi_Mpp_Vpss::Vpss_Bind_Vi(HI_S32 Pipe_Id, HI_S32 Chn_Id)
         std::cout << "HI_MPI_SYS_Bind failed!\n";
         return false;
     }
+    return true;
+}
+
+bool Hi_Mpp_Vpss::Write_Frame(const VIDEO_FRAME_S *Frame_Info)
+{
+    HI_U32 Size = (Frame_Info->u32Stride[0]) * (Frame_Info->u32Height) * 3 / 2;
+    HI_CHAR *Y_Addr = (HI_CHAR *)HI_MPI_SYS_Mmap(Frame_Info->u64PhyAddr[0], Size);
+    HI_CHAR *UV_Addr = Y_Addr + (Frame_Info->u32Stride[0] * Frame_Info->u32Height);
+    // 写入Y
+    if (Y_Addr == nullptr)
+    {
+        std::cout << "Y_Addr == nullptr!" << std::endl;
+        return false;
+    }
+
+    for (int h = 0; h < Frame_Info->u32Height; h++)
+    {
+        HI_CHAR *Temp = Y_Addr + h * Frame_Info->u32Stride[0];
+        fwrite(Temp, Frame_Info->u32Width, 1, Out_File);
+    }
+    // for (int h = 0; h < Frame_Info->u32Height; h++)
+    // {
+    //     HI_CHAR * temp = UV_Addr + h * Frame_Info->u32Stride[0];
+    //     fwrite(temp, Frame_Info->u32Width, 1, Out_File);
+    // }
+    HI_MPI_SYS_Munmap(Y_Addr, Size);
     return true;
 }
