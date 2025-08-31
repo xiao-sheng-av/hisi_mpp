@@ -27,7 +27,7 @@ private:
     //VI设备号
     VI_DEV Dev = 1;
     //pipe号
-    VI_PIPE Pipe_Id = 0;
+    VI_PIPE Pipe_Id = 1;
     //管道号, 3516dv300只有通道0
     VI_CHN Chn_Id = 0;
     //宽

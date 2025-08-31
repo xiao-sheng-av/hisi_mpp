@@ -362,18 +362,23 @@ bool Hi_Mpp_Vi::Init()
     {
         std::cout << "SetPubAttr failed!\n";
     }
+    // 调用本接口前，必须先调用hi_mpi_isp_set_pub_attr接口设置图像公共属性。并且不支持多进程
+    // ISP初始化后，需要一帧时间给硬件读取算法系数表。所以调用本接口后一帧时间内，不能调用hi_mpi_vi_stop_pipe接口停止VI PIPE。
     ret = HI_MPI_ISP_Init(Pipe_Id);
     if (ret != HI_SUCCESS)
     {
         std::cout << "ISP Init failed!\n";
     }
     // 启动isp，该函数为阻塞，所以需要一个线程去运行
+    // 调用本接口前，必须先调用hi_mpi_isp_init接口初始化ISP firmware。
+    // 不支持多进程
     isp_thread = std::thread(HI_MPI_ISP_Run, Pipe_Id);
     return true;
 }
 
 void Hi_Mpp_Vi::isp_stop()
 {
+    // 调用hi_mpi_isp_run之后，再调用本接口退出ISP firmware。
     HI_MPI_ISP_Exit(Pipe_Id);
     isp_thread.join();
 }
