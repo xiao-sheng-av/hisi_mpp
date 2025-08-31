@@ -15,6 +15,8 @@ public:
     ~Hi_Mpp_Vpss();
     bool Init();
     bool Vpss_Bind_Vi(HI_S32 Pipe_Id, HI_S32 Chn_Id);
+    HI_S32 Get_ChnId() { return VpssChn;}
+    HI_S32 Get_Grp() { return VpssGrp;}
 };
 
 #endif
