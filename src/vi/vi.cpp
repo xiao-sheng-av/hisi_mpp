@@ -28,6 +28,10 @@ bool Hi_Mpp_Vi::Init()
                                                                   DATA_BITWIDTH_8, COMPRESS_MODE_SEG, DEFAULT_ALIGN);
     // 缓存池中缓冲块个数
     Vb_Config.astCommPool[0].u32BlkCnt = 10;
+
+
+    Vb_Config.astCommPool[1].u64BlkSize  = VI_GetRawBufferSize(Width, Height, PIXEL_FORMAT_YVU_SEMIPLANAR_420, COMPRESS_MODE_NONE, DEFAULT_ALIGN);;
+    Vb_Config.astCommPool[1].u32BlkCnt   = 4;
     // 设置缓存池属性
     ret = HI_MPI_VB_SetConfig(&Vb_Config);
     if (HI_SUCCESS != ret)
@@ -150,6 +154,7 @@ bool Hi_Mpp_Vi::Init()
     {
         std::cout << "Set VI-VPSS mode Param failed\n";
     }
+
     VI_DEV_ATTR_S ViDevAttr = {
         VI_MODE_MIPI,            // 物理接口模式，这里使用的是mipi
         VI_WORK_MODE_1Multiplex, // 一路复合工作模式
@@ -197,6 +202,9 @@ bool Hi_Mpp_Vi::Init()
         // 一拍一像素
         DATA_RATE_X1};
     /*不支持 BT.1120 隔行输入。在调用前要保证 VI 设备处于禁用状态。如果 VI 设备已处于使能状态，可以使用HI_MPI_VI_DisableDev 来禁用设备。*/
+    // 不影响，因为本来就设置
+    ViDevAttr.stWDRAttr.enWDRMode = WDR_MODE_NONE;
+
     ret = HI_MPI_VI_SetDevAttr(Dev, &ViDevAttr);
     if (ret != HI_SUCCESS)
     {
@@ -214,7 +222,9 @@ bool Hi_Mpp_Vi::Init()
         return HI_FAILURE;
     }
     // VI_DEV_BIND_PIPE_S:定义 VI DEV 与 PIPE 的绑定关系.
-    VI_DEV_BIND_PIPE_S DevBindPipe = {0};
+
+    VI_DEV_BIND_PIPE_S DevBindPipe;
+    memset(&DevBindPipe, 0, sizeof(DevBindPipe));
     // 该 VI Dev 所绑定的 PIPE 数目
     DevBindPipe.u32Num = 1;
     // 该 VI Dev 绑定的 PIPE 号。
@@ -226,6 +236,7 @@ bool Hi_Mpp_Vi::Init()
         std::cout << "HI_MPI_VI_SetDevBindPipe failed!\n";
         return HI_FAILURE;
     }
+
     // PIPE对VI的数据进行处理，然后输出到通道
     VI_PIPE_ATTR_S PipeAttr = {
         // VI PIPE 的 Bypass 模式。VI的数据是否经过FE和BE处理，VI_PIPE_BYPASS_NONE表示不处理，静态属性，创建 PIPE 时设定，不可更改。
@@ -273,6 +284,7 @@ bool Hi_Mpp_Vi::Init()
         HI_MPI_VI_DestroyPipe(Pipe_Id);
         std::cout << "HI_MPI_VI_StartPipe failed!\n";
     }
+
     // VI 通道属性
     VI_CHN_ATTR_S ChnAttr =
         {
@@ -295,12 +307,14 @@ bool Hi_Mpp_Vi::Init()
             // 帧率控制,当源帧率为-1 时，目标帧率必须为-1(不进行帧率控制)，其他情况下，目标帧率不能大于源帧率。
             {-1, -1}};
     // 设置VI通道属性，3516dv300只有通道0
+
     ret = HI_MPI_VI_SetChnAttr(Pipe_Id, Chn_Id, &ChnAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetChnAttr failed!\n";
         return HI_FAILURE;
     }
+    
     VI_VPSS_MODE_E enMastPipeMode = vi_vpss_mode.aenMode[0];
     if (VI_OFFLINE_VPSS_OFFLINE == enMastPipeMode || VI_ONLINE_VPSS_OFFLINE == enMastPipeMode || VI_PARALLEL_VPSS_OFFLINE == enMastPipeMode)
     {
@@ -313,8 +327,8 @@ bool Hi_Mpp_Vi::Init()
             return HI_FAILURE;
         }
     }
-
     const ISP_SNS_OBJ_S *pstSnsObj = &stSnsGc2053Obj;
+
     ALG_LIB_S stAeLib;
     ALG_LIB_S stAwbLib;
     stAeLib.s32Id = Pipe_Id;
@@ -333,6 +347,18 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "set sensor bus info failed!\n";
+    }
+
+    ret = HI_MPI_AE_Register(Pipe_Id, &stAeLib);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "ae_register failed!\n";
+    }
+    ISP_AWB_REGISTER_S Register;
+    // 就是因为缺了AWB导致视频画面为黑 
+    ret = HI_MPI_AWB_Register(Pipe_Id, &stAwbLib);
+    if (ret != HI_SUCCESS) {
+        std::cout << "HI_MPI_AWB_Register failed!\n";
     }
 
     // 此处是设置sensro,

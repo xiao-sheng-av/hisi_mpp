@@ -18,6 +18,8 @@
 #include "hi_sns_ctrl.h"
 #include "hi_ae_comm.h"
 #include "hi_awb_comm.h"
+#include "mpi_ae.h"
+#include "mpi_awb.h"
 #define MIPI_DEV_NODE       "/dev/hi_mipi"
 
 class Hi_Mpp_Vi
