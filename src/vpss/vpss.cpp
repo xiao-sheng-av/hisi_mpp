@@ -1,7 +1,7 @@
 #include "vpss.hpp"
 Hi_Mpp_Vpss::Hi_Mpp_Vpss()
 {
-    Out_File = fopen("out.yuv", "wb");
+    Out_File = fopen("out.yuv", "ab");
 }
 
 Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
@@ -85,7 +85,7 @@ bool Hi_Mpp_Vpss::Init()
     return true;
 }
 
-bool Hi_Mpp_Vpss::Vpss_Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
+bool Hi_Mpp_Vpss::Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
 {
     MPP_CHN_S stSrcChn;
     MPP_CHN_S stDestChn;
@@ -108,28 +108,3 @@ bool Hi_Mpp_Vpss::Vpss_Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
     return true;
 }
 
-bool Hi_Mpp_Vpss::Write_Frame(const VIDEO_FRAME_S *Frame_Info)
-{
-    HI_U32 Size = (Frame_Info->u32Stride[0]) * (Frame_Info->u32Height) * 3 / 2;
-    HI_CHAR *Y_Addr = (HI_CHAR *)HI_MPI_SYS_Mmap(Frame_Info->u64PhyAddr[0], Size);
-    HI_CHAR *UV_Addr = Y_Addr + (Frame_Info->u32Stride[0] * Frame_Info->u32Height);
-    // 写入Y
-    if (Y_Addr == nullptr)
-    {
-        std::cout << "Y_Addr == nullptr!" << std::endl;
-        return false;
-    }
-
-    for (int h = 0; h < Frame_Info->u32Height; h++)
-    {
-        HI_CHAR *Temp = Y_Addr + h * Frame_Info->u32Stride[0];
-        fwrite(Temp, Frame_Info->u32Width, 1, Out_File);
-    }
-    // for (int h = 0; h < Frame_Info->u32Height; h++)
-    // {
-    //     HI_CHAR * temp = UV_Addr + h * Frame_Info->u32Stride[0];
-    //     fwrite(temp, Frame_Info->u32Width, 1, Out_File);
-    // }
-    HI_MPI_SYS_Munmap(Y_Addr, Size);
-    return true;
-}
