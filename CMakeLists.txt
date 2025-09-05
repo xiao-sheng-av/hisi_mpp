@@ -8,6 +8,7 @@ set(SRC_DIRS
     ${PROJECT_SOURCE_DIR}/src/vi
     ${PROJECT_SOURCE_DIR}/inc
     ${PROJECT_SOURCE_DIR}/src/vpss
+    ${PROJECT_SOURCE_DIR}/src/vo
 )
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -15,6 +16,7 @@ add_executable(test
     src/test.cpp 
     src/vi/vi.cpp
     src/vpss/vpss.cpp
+    src/vo/vo.cpp
 )
 
 target_link_libraries(test 
@@ -32,6 +34,7 @@ target_link_libraries(test
     _hiawb
     _hiae 
     sns_gc2053
+    hdmi
 )
 
 include_directories(${SRC_DIRS})
