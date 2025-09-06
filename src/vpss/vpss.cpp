@@ -1,7 +1,6 @@
 #include "vpss.hpp"
 Hi_Mpp_Vpss::Hi_Mpp_Vpss()
 {
-    Out_File = fopen("out.yuv", "ab");
 }
 
 Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
