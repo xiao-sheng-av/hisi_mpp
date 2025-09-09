@@ -12,12 +12,15 @@ private:
     VO_DEV Vo_Dev = 0;
     HI_U32 ret;
     VO_LAYER VoLayer = 0;
+    MPP_CHN_S stSrcChn;
+    MPP_CHN_S stDestChn;
 
 public:
     Hi_Mpp_Vo();
     ~Hi_Mpp_Vo();
-    HI_U32 Init();
+    bool Init();
     bool Bind_Vpss(const HI_S32 Vpss_Grp, const HI_S32 Vpss_Chn);
+    HI_U32 UnBind_Vpss();
 };
 
 
