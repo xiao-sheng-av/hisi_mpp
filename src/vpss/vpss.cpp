@@ -10,6 +10,17 @@ Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
     {
         std::cout << "HI_MPI_VPSS_DisableChn failed!\n";
     }
+    ret = HI_MPI_VPSS_StopGrp(VpssGrp);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "HI_MPI_VPSS_StopGrp failed!\n";
+    }
+
+    ret = HI_MPI_VPSS_DestroyGrp(VpssGrp);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "HI_MPI_VPSS_DestroyGrp failed!\n";
+    }
 }
 
 bool Hi_Mpp_Vpss::Init()
