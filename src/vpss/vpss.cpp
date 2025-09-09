@@ -5,6 +5,11 @@ Hi_Mpp_Vpss::Hi_Mpp_Vpss()
 
 Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
 {
+    ret = HI_MPI_VPSS_DisableChn(VpssGrp, VpssChn);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "HI_MPI_VPSS_DisableChn failed!\n";
+    }
 }
 
 bool Hi_Mpp_Vpss::Init()
@@ -35,6 +40,7 @@ bool Hi_Mpp_Vpss::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MPI_VPSS_CreateGrp false!" << ret << std::endl;
+        return false;
     }
 
     VPSS_CHN_ATTR_S VpssChnAttr;
@@ -68,18 +74,21 @@ bool Hi_Mpp_Vpss::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_SetChnAttr failed!\n";
+        return false;
     }
     // GROUP 必须已创建。
     ret = HI_MPI_VPSS_EnableChn(VpssGrp, VpssChn);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_EnableChn failed!\n";
+        return false;
     }
     // GROUP 必须已创建。重复调用该函数设置同一个组返回成功。
     ret = HI_MPI_VPSS_StartGrp(VpssGrp);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_StartGrp failed!\n";
+        return false;
     }
     return true;
 }
@@ -106,4 +115,3 @@ bool Hi_Mpp_Vpss::Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
     }
     return true;
 }
-
