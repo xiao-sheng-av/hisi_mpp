@@ -21,12 +21,12 @@ bool Init(Hi_Mpp_Vi & vi, Hi_Mpp_Vpss & vpss, Hi_Mpp_Vo & vo)
         std::cout << "vpss bind vi failed\n";
         return false;
     }
-    if (vo.Init() != HI_SUCCESS)
+    if (vo.Init() == false)
     {
         std::cout << "vo Init failed\n";
         return false;
     }
-    if (vo.Bind_Vpss(vpss.Get_Grp(), vpss.Get_ChnId()) != true)
+    if (vo.Bind_Vpss(vpss.Get_Grp(), vpss.Get_ChnId()) == false)
     {
         std::cout << "vpss bind vo false\n";
     }
@@ -46,7 +46,7 @@ int main()
         std::cout << "Init false\n";
         return -1;
     }
-
+    std::cout << "\n===========输入回车结束==============\n";
     getchar();
 
     

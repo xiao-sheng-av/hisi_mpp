@@ -44,7 +44,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MPI_VB_Init failed!\n";
-        return HI_FAILURE;
+        return false;
     }
     // 初始化MPP系统，必须先调用 HI_MPI_SYS_SetConfig(该接口功能暂时无效) 配置 MPP 系统后才能初始化，否则初始化会失败。
     // 由于 MPP 系统的正常运行依赖于缓存池，因此需要先调用 HI_MPI_VB_Init 初始化缓存池，再初始化 MPP 系统，否则会导致业务运行异常。
@@ -53,7 +53,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MPI_SYS_Init failed!\n";
-        return HI_FAILURE;
+        return false;
     }
 
     /******启动VI******/
@@ -63,7 +63,7 @@ bool Hi_Mpp_Vi::Init()
     if (fd < 0)
     {
         std::cout << "open hi_mipi dev failed\n";
-        return -1;
+        return false;
     }
 
     // 设置MIPI Rx的Lane分布模式，对SLVS无作用。
@@ -71,6 +71,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_SET_HS_MODE failed\n";
+        return false;
     }
 
     // 设置时钟
@@ -80,6 +81,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_ENABLE_MIPI_CLOCK failed\n";
+        return false;
     }
 
     // 复位MIPI
@@ -87,6 +89,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_RESET_MIPI failed\n";
+        return false;
     }
 
     // 使能摄像头时钟
@@ -97,6 +100,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_ENABLE_SENSOR_CLOCK failed\n";
+        return false;
     }
 
     // 复位sensor
@@ -105,6 +109,7 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_RESET_SENSOR failed\n";
+        return false;
     }
 
     // 设置MIPI Rx、SLVS和并口设备属性。需要选择与dev对应的属性，dev1和dev0的不通用
@@ -124,18 +129,21 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_SET_DEV_ATTR failed\n";
+        return false;
     }
     // 撤销复位MIPI Rx
     ret = ioctl(fd, HI_MIPI_UNRESET_MIPI, &Dev);
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_UNRESET_MIPI failed\n";
+        return false;
     }
     // 撤销复位Sensor。
     ret = ioctl(fd, HI_MIPI_UNRESET_SENSOR, &SnsDev);
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MIPI_UNRESET_SENSOR failed\n";
+        return false;
     }
 
     close(fd);
@@ -147,12 +155,14 @@ bool Hi_Mpp_Vi::Init()
     if (HI_SUCCESS != ret)
     {
         std::cout << "Get VI-VPSS mode Param failed\n";
+        return false;
     }
     // 设置VI_VPSS模式
     ret = HI_MPI_SYS_SetVIVPSSMode(&vi_vpss_mode);
     if (HI_SUCCESS != ret)
     {
         std::cout << "Set VI-VPSS mode Param failed\n";
+        return false;
     }
 
     VI_DEV_ATTR_S ViDevAttr = {
@@ -209,7 +219,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetDevAttr failed!\n";
-        return HI_FAILURE;
+        return false;
     }
     /*启用前必须已经设置设备属性，否则返回失败。
       可重复启用，不返回失败。
@@ -219,7 +229,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_EnableDev failed!\n";
-        return HI_FAILURE;
+        return false;
     }
     // VI_DEV_BIND_PIPE_S:定义 VI DEV 与 PIPE 的绑定关系.
 
@@ -234,7 +244,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetDevBindPipe failed!\n";
-        return HI_FAILURE;
+        return false;
     }
 
     // PIPE对VI的数据进行处理，然后输出到通道
@@ -275,6 +285,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_CreatePipe failed!" << std::hex << ret << std::dec << std::endl;
+        return false;
     }
     // PIPE 必须已创建
     ret = HI_MPI_VI_StartPipe(Pipe_Id);
@@ -283,6 +294,7 @@ bool Hi_Mpp_Vi::Init()
         // 销毁一个PIPE
         HI_MPI_VI_DestroyPipe(Pipe_Id);
         std::cout << "HI_MPI_VI_StartPipe failed!\n";
+        return false;
     }
 
     // VI 通道属性
@@ -312,7 +324,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_SetChnAttr failed!\n";
-        return HI_FAILURE;
+        return false;
     }
     
     VI_VPSS_MODE_E enMastPipeMode = vi_vpss_mode.aenMode[0];
@@ -324,7 +336,7 @@ bool Hi_Mpp_Vi::Init()
         if (ret != HI_SUCCESS)
         {
             std::cout << "HI_MPI_VI_EnableChn failed!\n";
-            return HI_FAILURE;
+            return false;
         }
     }
     const ISP_SNS_OBJ_S *pstSnsObj = &stSnsGc2053Obj;
@@ -339,6 +351,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "sensor_register_callback failed!\n";
+        return false;
     }
 
     ISP_SNS_COMMBUS_U uSnsBusInfo;
@@ -347,18 +360,21 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "set sensor bus info failed!\n";
+        return false;
     }
 
     ret = HI_MPI_AE_Register(Pipe_Id, &stAeLib);
     if (ret != HI_SUCCESS)
     {
         std::cout << "ae_register failed!\n";
+        return false;
     }
     ISP_AWB_REGISTER_S Register;
     // 就是因为缺了AWB导致视频画面为黑 
     ret = HI_MPI_AWB_Register(Pipe_Id, &stAwbLib);
     if (ret != HI_SUCCESS) {
         std::cout << "HI_MPI_AWB_Register failed!\n";
+        return false;
     }
 
     // 此处是设置sensro,
@@ -366,6 +382,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "Init Ext memory failed!\n";
+        return false;
     }
 
     ISP_PUB_ATTR_S PubAttr =
@@ -387,6 +404,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "SetPubAttr failed!\n";
+        return false;
     }
     // 调用本接口前，必须先调用hi_mpi_isp_set_pub_attr接口设置图像公共属性。并且不支持多进程
     // ISP初始化后，需要一帧时间给硬件读取算法系数表。所以调用本接口后一帧时间内，不能调用hi_mpi_vi_stop_pipe接口停止VI PIPE。
@@ -394,6 +412,7 @@ bool Hi_Mpp_Vi::Init()
     if (ret != HI_SUCCESS)
     {
         std::cout << "ISP Init failed!\n";
+        return false;
     }
     // 启动isp，该函数为阻塞，所以需要一个线程去运行
     // 调用本接口前，必须先调用hi_mpi_isp_init接口初始化ISP firmware。
