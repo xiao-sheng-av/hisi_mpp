@@ -7,19 +7,20 @@ Hi_Mpp_Vi::Hi_Mpp_Vi()
 Hi_Mpp_Vi::~Hi_Mpp_Vi()
 {
     // 退出程序前需要退出这些模块，否则下次运行程序会显示xx模块繁忙
-    isp_stop();
-    HI_MPI_AWB_UnRegister(Dev, &stAwbLib);
-    HI_MPI_AE_UnRegister(Dev, &stAeLib);
-    pstSnsObj->pfnUnRegisterCallback(Dev, &stAeLib, &stAwbLib);
+    // vi模块反初始化
+    isp_stop();  
+    HI_MPI_AWB_UnRegister(Pipe_Id, &stAwbLib);
+    HI_MPI_AE_UnRegister(Pipe_Id, &stAeLib);
+    pstSnsObj->pfnUnRegisterCallback(Pipe_Id, &stAeLib, &stAwbLib);
     HI_MPI_VI_DisableChn(Pipe_Id, Chn_Id);
     HI_MPI_VI_StopPipe(Pipe_Id);
     HI_MPI_VI_DestroyPipe(Pipe_Id);
     HI_MPI_VI_DisableDev(Dev);
-    // 缺少iotcl反初始化
+    Mipi_DeInit();
+    // sys 退出
     HI_MPI_SYS_Exit();
     HI_MPI_VB_ExitModCommPool(VB_UID_VI);
     HI_MPI_VB_Exit();
-
 }
 
 bool Hi_Mpp_Vi::Init()
@@ -59,99 +60,13 @@ bool Hi_Mpp_Vi::Init()
         std::cout << "HI_MPI_SYS_Init failed!\n";
         return false;
     }
-
-    /******启动VI******/
-    /*      启动第一步开启MIPI    */
-    lane_divide_mode_t mipi_mode = LANE_DIVIDE_MODE_1;
-    int fd = open(MIPI_DEV_NODE, O_RDWR);
-    if (fd < 0)
+    /*      开启第一步mipi初始化     */
+    ret = Mipi_Init();
+    if (ret != HI_SUCCESS)
     {
-        std::cout << "open hi_mipi dev failed\n";
+        std::cout << "Mipi_Init failed!\n";
         return false;
     }
-
-    // 设置MIPI Rx的Lane分布模式，对SLVS无作用。
-    ret = ioctl(fd, HI_MIPI_SET_HS_MODE, &mipi_mode);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_SET_HS_MODE failed\n";
-        return false;
-    }
-
-    // 设置时钟
-    combo_dev_t mipidev = Dev;
-
-    ret = ioctl(fd, HI_MIPI_ENABLE_MIPI_CLOCK, &mipidev);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_ENABLE_MIPI_CLOCK failed\n";
-        return false;
-    }
-
-    // 复位MIPI
-    ret = ioctl(fd, HI_MIPI_RESET_MIPI, &Dev);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_RESET_MIPI failed\n";
-        return false;
-    }
-
-    // 使能摄像头时钟
-    // 修改此处为1，对应dev = 1
-    sns_clk_source_t SnsDev = Dev;
-
-    ret = ioctl(fd, HI_MIPI_ENABLE_SENSOR_CLOCK, &SnsDev);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_ENABLE_SENSOR_CLOCK failed\n";
-        return false;
-    }
-
-    // 复位sensor
-
-    ret = ioctl(fd, HI_MIPI_RESET_SENSOR, &SnsDev);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_RESET_SENSOR failed\n";
-        return false;
-    }
-
-    // 设置MIPI Rx、SLVS和并口设备属性。需要选择与dev对应的属性，dev1和dev0的不通用
-    combo_dev_attr_t stcomboDevAttr =
-        {
-            .devno = 1,
-            .input_mode = INPUT_MODE_MIPI,
-            .data_rate = MIPI_DATA_RATE_X1,
-            .img_rect = {0, 0, 1920, 1080},
-
-            {.mipi_attr =
-                 {
-                     DATA_TYPE_RAW_10BIT,
-                     HI_MIPI_WDR_MODE_NONE,
-                     {1, 3, -1, -1}}}};
-    ret = ioctl(fd, HI_MIPI_SET_DEV_ATTR, &stcomboDevAttr);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_SET_DEV_ATTR failed\n";
-        return false;
-    }
-    // 撤销复位MIPI Rx
-    ret = ioctl(fd, HI_MIPI_UNRESET_MIPI, &Dev);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_UNRESET_MIPI failed\n";
-        return false;
-    }
-    // 撤销复位Sensor。
-    ret = ioctl(fd, HI_MIPI_UNRESET_SENSOR, &SnsDev);
-    if (HI_SUCCESS != ret)
-    {
-        std::cout << "HI_MIPI_UNRESET_SENSOR failed\n";
-        return false;
-    }
-
-    close(fd);
-
     /*      开启第二步设置VI属性     */
     // 获取 VI，VPSS 的工作模式。获取到stVIVPSSMode
     VI_VPSS_MODE_S vi_vpss_mode;
@@ -282,14 +197,14 @@ bool Hi_Mpp_Vi::Init()
         HI_FALSE,
         // 一样不进行帧率控制
         {-1, -1}};
-    // 创建一个 VI PIPE。不支持重复创建。
+    // 创建一个 VI PIPE。不支持重复创建。 对应 HI_MPI_VI_DestroyPipe
     ret = HI_MPI_VI_CreatePipe(Pipe_Id, &PipeAttr);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VI_CreatePipe failed!" << std::hex << ret << std::dec << std::endl;
         return false;
     }
-    // 启用 VI PIPE。PIPE 必须已创建(HI_MPI_VI_CreatePipe)
+    // 启用 VI PIPE。PIPE 必须已创建(HI_MPI_VI_CreatePipe)。对应 HI_MPI_VI_StopPipe
     ret = HI_MPI_VI_StartPipe(Pipe_Id);
     if (ret != HI_SUCCESS)
     {
@@ -407,7 +322,7 @@ bool Hi_Mpp_Vi::Init()
         return false;
     }
     // 调用本接口前，必须先调用 HI_MPI_ISP_SetPubAttr 接口设置图像公共属性。并且不支持多进程
-    // ISP初始化后，需要一帧时间给硬件读取算法系数表。
+    // ISP初始化后，需要一帧时间给硬件读取算法系数表。对应 HI_MPI_ISP_Exit
     ret = HI_MPI_ISP_Init(Pipe_Id);
     if (ret != HI_SUCCESS)
     {
@@ -423,7 +338,141 @@ bool Hi_Mpp_Vi::Init()
 
 void Hi_Mpp_Vi::isp_stop()
 {
-    // 调用hi_mpi_isp_run之后，再调用本接口退出ISP firmware。
+    // 调用 HI_MPI_ISP_Init 之后，再调用本接口退出ISP。
     HI_MPI_ISP_Exit(Pipe_Id);
     isp_thread.join();
+}
+
+HI_U32 Hi_Mpp_Vi::Mipi_Init()
+{
+    lane_divide_mode_t mipi_mode = LANE_DIVIDE_MODE_1;
+    int fd = open(MIPI_DEV_NODE, O_RDWR);
+    if (fd < 0)
+    {
+        std::cout << "open hi_mipi dev failed\n";
+        return HI_FAILURE;
+    }
+
+    // 设置MIPI Rx的Lane分布模式，对SLVS无作用。
+    ret = ioctl(fd, HI_MIPI_SET_HS_MODE, &mipi_mode);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_SET_HS_MODE failed\n";
+        return HI_FAILURE;
+    }
+
+    // 设置时钟
+    combo_dev_t mipidev = Dev;
+
+    ret = ioctl(fd, HI_MIPI_ENABLE_MIPI_CLOCK, &mipidev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_ENABLE_MIPI_CLOCK failed\n";
+        return HI_FAILURE;
+    }
+
+    // 复位MIPI
+    ret = ioctl(fd, HI_MIPI_RESET_MIPI, &Dev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_RESET_MIPI failed\n";
+        return HI_FAILURE;
+    }
+
+    // 使能摄像头时钟
+    // 修改此处为1，对应dev = 1
+    sns_clk_source_t SnsDev = Dev;
+
+    ret = ioctl(fd, HI_MIPI_ENABLE_SENSOR_CLOCK, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_ENABLE_SENSOR_CLOCK failed\n";
+        return HI_FAILURE;
+    }
+
+    // 复位sensor
+
+    ret = ioctl(fd, HI_MIPI_RESET_SENSOR, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_RESET_SENSOR failed\n";
+        return HI_FAILURE;
+    }
+
+    // 设置MIPI Rx、SLVS和并口设备属性。需要选择与dev对应的属性，dev1和dev0的不通用
+    combo_dev_attr_t stcomboDevAttr =
+        {
+            .devno = 1,
+            .input_mode = INPUT_MODE_MIPI,
+            .data_rate = MIPI_DATA_RATE_X1,
+            .img_rect = {0, 0, 1920, 1080},
+
+            {.mipi_attr =
+                 {
+                     DATA_TYPE_RAW_10BIT,
+                     HI_MIPI_WDR_MODE_NONE,
+                     {1, 3, -1, -1}}}};
+    ret = ioctl(fd, HI_MIPI_SET_DEV_ATTR, &stcomboDevAttr);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_SET_DEV_ATTR failed\n";
+        return HI_FAILURE;
+    }
+    // 撤销复位MIPI Rx
+    ret = ioctl(fd, HI_MIPI_UNRESET_MIPI, &Dev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_UNRESET_MIPI failed\n";
+        return HI_FAILURE;
+    }
+    // 撤销复位Sensor。
+    ret = ioctl(fd, HI_MIPI_UNRESET_SENSOR, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_UNRESET_SENSOR failed\n";
+        return HI_FAILURE;
+    }
+    close(fd);
+    return HI_SUCCESS;
+}
+
+HI_U32 Hi_Mpp_Vi::Mipi_DeInit()
+{
+    sns_clk_source_t SnsDev = Dev;
+    int fd = open(MIPI_DEV_NODE, O_RDWR);
+    if (fd < 0)
+    {
+        std::cout << "open hi_mipi dev failed\n";
+        return HI_FAILURE;
+    }
+
+    ret = ioctl(fd, HI_MIPI_RESET_SENSOR, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_RESET_SENSOR failed\n";
+        return HI_FAILURE;
+    }
+
+    ret = ioctl(fd, HI_MIPI_DISABLE_SENSOR_CLOCK, &SnsDev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_DISABLE_SENSOR_CLOCK failed\n";
+        return HI_FAILURE;
+    }
+
+    ret = ioctl(fd, HI_MIPI_RESET_MIPI, &Dev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_RESET_MIPI failed\n";
+        return HI_FAILURE;
+    }
+
+    ret = ioctl(fd, HI_MIPI_DISABLE_MIPI_CLOCK, &Dev);
+    if (HI_SUCCESS != ret)
+    {
+        std::cout << "HI_MIPI_DISABLE_MIPI_CLOCK failed\n";
+        return HI_FAILURE;
+    }
+    close(fd);
+    return HI_SUCCESS;
 }

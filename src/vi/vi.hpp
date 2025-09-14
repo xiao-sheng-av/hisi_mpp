@@ -48,6 +48,8 @@ public:
     Hi_Mpp_Vi();
     ~Hi_Mpp_Vi();
     bool Init();
+    HI_U32 Mipi_Init();
+    HI_U32 Mipi_DeInit();
     void isp_stop();
     HI_S32 GetPipeId() { return Pipe_Id; }
     HI_S32 GetChnId() { return Chn_Id; }
