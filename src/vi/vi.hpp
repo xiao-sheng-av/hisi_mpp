@@ -26,10 +26,10 @@ class Hi_Mpp_Vi
 {
 private:
     HI_U32 ret = 0;
-    //VI设备号
+    //VI设备号，DEV和MIPI是一一对应的
     VI_DEV Dev = 1;
-    //pipe号
-    VI_PIPE Pipe_Id = 1;
+    //pipe号，PIPE和DEV不是一一对应的
+    VI_PIPE Pipe_Id = 0;
     //管道号, 3516dv300只有通道0
     VI_CHN Chn_Id = 0;
     //宽
@@ -38,6 +38,10 @@ private:
     HI_U32 Height = 1080;
     //缓存池设置
     VB_CONFIG_S Vb_Config = {0};
+    // Ae为自动曝光库，Awb为自动白平衡库
+    ALG_LIB_S stAeLib;
+    ALG_LIB_S stAwbLib;
+    const ISP_SNS_OBJ_S *pstSnsObj;
     //isp运行线程
     std::thread isp_thread;
 public:
