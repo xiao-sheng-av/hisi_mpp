@@ -9,9 +9,12 @@
 class Hi_Mpp_Vo
 {
 private:
-    VO_DEV Vo_Dev = 0;
+    // 3516dv300只支持输出设备0，在hi_defines.h中有定义
+    VO_DEV VoDev = 0;
     HI_U32 ret;
+    // 3516dv300只支持视频层0
     VO_LAYER VoLayer = 0;
+    VO_CHN VoChn = 2;
     MPP_CHN_S stSrcChn;
     MPP_CHN_S stDestChn;
 
