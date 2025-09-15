@@ -4,7 +4,6 @@
 #include "vo.hpp"
 bool Init(Hi_Mpp_Vi & vi, Hi_Mpp_Vpss & vpss, Hi_Mpp_Vo & vo)
 {
-    HI_S32 Pipe_Id = vi.GetPipeId();
     HI_S32 Chn_Id = vi.GetChnId();
     if (vi.Init() == false)
     {
@@ -16,7 +15,7 @@ bool Init(Hi_Mpp_Vi & vi, Hi_Mpp_Vpss & vpss, Hi_Mpp_Vo & vo)
         std::cout << "vpss Init failed\n";
         return false;
     }
-    if (vpss.Bind_Vi(Pipe_Id, Chn_Id) == false)
+    if (vpss.Bind_Vi(Chn_Id) == false)
     {
         std::cout << "vpss bind vi failed\n";
         return false;
