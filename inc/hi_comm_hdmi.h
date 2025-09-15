@@ -525,40 +525,62 @@ typedef struct hiHDMI_SINK_CAPABILITY_S {
 } HI_HDMI_SINK_CAPABILITY_S;
 
 typedef struct hiHDMI_ATTR_S {
-    HI_BOOL                 bEnableHdmi;         /* Whether to forcibly output the video over the HDMI. */
-
-    HI_BOOL                 bEnableVideo;        /* Whether to output video.The value must be HI_TRUE.If the value is HI_FALSE, the HDMI is forcibly set to HI_TRUE. */
-    HI_HDMI_VIDEO_FMT_E     enVideoFmt;          /* Video norm. This value of the video norm must be consistent with the norm of the video output. */
-    HI_HDMI_VIDEO_MODE_E    enVidInMode;         /* HDMI input video input mode.VIDEO_MODE_YCBCR444,VIDEO_MODE_YCBCR422,VIDEO_MODE_YCBCR420,VIDEO_MODE_RGB444 */
-    HI_HDMI_VIDEO_MODE_E    enVidOutMode;        /* HDMI output video output mode.VIDEO_MODE_YCBCR444,VIDEO_MODE_YCBCR422,VIDEO_MODE_YCBCR420,VIDEO_MODE_RGB444 */
-    HI_HDMI_QUANTIZATION_E  enOutCscQuantization; /* CSC output quantization range HDMI_QUANTIZATION_RANGE_LIMITED, HDMI_QUANTIZATION_RANGE_FULL>* */
-    HI_HDMI_DEEP_COLOR_E    enDeepColorMode;     /* DeepColor output mode.It is HI_HDMI_DEEP_COLOR_24BIT by default. */
-    HI_BOOL                 bxvYCCMode;          /* Whether to enable the xvYCC output mode.It is HI_FALSE by default. */
-
-    HI_BOOL                 bEnableAudio;        /* Whether to enable the audio. */
-    HI_HDMI_SND_INTERFACE_E enSoundIntf;         /* HDMI audio source.It is set to HI_HDMI_SND_INTERFACE_I2S, which needs to be consistent with the VO interface. */
-    HI_BOOL                 bIsMultiChannel;     /* Multi-channel or stereo 0: stereo 1: eight-channel fixed for multi-channel */
-    HI_HDMI_SAMPLE_RATE_E   enSampleRate;        /* Audio sampling rate. This parameter needs to be consistent with that of the VO. */
-    HI_U8                   u8DownSampleParm;    /* Audio down sampling rate parameter. It is 0 by default. */
-
-    HI_HDMI_BIT_DEPTH_E     enBitDepth;          /* Audio bit width. It is 16 by default. This parameter needs to be consistent with that of the VO. */
-    HI_U8                   u8I2SCtlVbit;        /* Reserved. It is set to 0. I2S control (0x7A:0x1D) */
-
-    HI_BOOL                 bEnableAviInfoFrame; /* Whether to enable AVI InfoFrame.It is recommended to enable this function. */
-    HI_BOOL                 bEnableAudInfoFrame; /* Whether to enable AUDIO InfoFrame.It is recommended to enable this function. */
-    HI_BOOL                 bEnableSpdInfoFrame; /* Whether to enable SPD InfoFrame.It is recommended to disable this function. */
-    HI_BOOL                 bEnableMpegInfoFrame; /* Whether to enable MPEG InfoFrame.It is recommended to disable this function. */
-
-    HI_BOOL                 bDebugFlag;          /* Whether to enable the debug information in the HDMI.It is recommended to disable this function. */
-    HI_BOOL                 bHDCPEnable;         /* Whether to enable the HDCP.0: disabled 1: enabled */
-
-    HI_BOOL                 b3DEnable;           /* Whether to enable 3D mode. 0: disabled 1: enabled */
-    HI_U8                   u83DParam;           /* 3D Parameter. The default value is 9. */
-    HI_HDMI_FORCE_ACTION_E  enDefaultMode;       /* When get capability fail,HDMI forcily(priority) judgments output video mode.Default is HI_HDMI_FORCE_HDMI. */
-    HI_BOOL                 bAuthMode;           /* Whether to enable auth mode. 0: disabled 1: enabled */
-    HI_BOOL                 bEnableVidModeAdapt; /* Enable flag of vedio mode & DVI adapting case of user setting incorrect,default:HI_TRUE.When user have no any adapting strategy,suggestion HI_TRUE */
-    HI_BOOL                 bEnableDeepClrAdapt; /* Enable flag of deep color mode adapting case of user setting incorrect,default: HI_FALSE.When user have no any adapting strategy,suggestion HI_TRUE */
-    HI_U32                  u32PixClk;           /* Pixclk of enVideoFmt(unit is kHz).(This param is valid only when enVideoFmt is HI_HDMI_VIDEO_FMT_VESA_CUSTOMER_DEFINE) */
+/* 是否强制通过HDMI输出视频 */
+HI_BOOL                 bEnableHdmi;         /* Whether to forcibly output the video over the HDMI. */
+/* 是否输出视频。该值必须为HI_TRUE。如果为HI_FALSE，HDMI会强制设为HI_TRUE */
+HI_BOOL                 bEnableVideo;        /* Whether to output video.The value must be HI_TRUE.If the value is HI_FALSE, the HDMI is forcibly set to HI_TRUE. */
+/* 视频制式。该视频制式的值必须与视频输出的制式保持一致 */
+HI_HDMI_VIDEO_FMT_E     enVideoFmt;          /* Video norm. This value of the video norm must be consistent with the norm of the video output. */
+/* HDMI输入视频模式：VIDEO_MODE_YCBCR444, VIDEO_MODE_YCBCR422, VIDEO_MODE_YCBCR420, VIDEO_MODE_RGB444 */
+HI_HDMI_VIDEO_MODE_E    enVidInMode;         /* HDMI input video input mode.VIDEO_MODE_YCBCR444,VIDEO_MODE_YCBCR422,VIDEO_MODE_YCBCR420,VIDEO_MODE_RGB444 */
+/* HDMI输出视频模式：VIDEO_MODE_YCBCR444, VIDEO_MODE_YCBCR422, VIDEO_MODE_YCBCR420, VIDEO_MODE_RGB444 */
+HI_HDMI_VIDEO_MODE_E    enVidOutMode;        /* HDMI output video output mode.VIDEO_MODE_YCBCR444,VIDEO_MODE_YCBCR422,VIDEO_MODE_YCBCR420,VIDEO_MODE_RGB444 */
+/* CSC输出量化范围：HDMI_QUANTIZATION_RANGE_LIMITED（有限范围），HDMI_QUANTIZATION_RANGE_FULL（全范围） */
+HI_HDMI_QUANTIZATION_E  enOutCscQuantization; /* CSC output quantization range HDMI_QUANTIZATION_RANGE_LIMITED, HDMI_QUANTIZATION_RANGE_FULL>* */
+/* DeepColor输出模式。默认为HI_HDMI_DEEP_COLOR_24BIT */
+HI_HDMI_DEEP_COLOR_E    enDeepColorMode;     /* DeepColor output mode.It is HI_HDMI_DEEP_COLOR_24BIT by default. */
+/* 是否启用xvYCC输出模式。默认为HI_FALSE */
+HI_BOOL                 bxvYCCMode;          /* Whether to enable the xvYCC output mode.It is HI_FALSE by default. */
+/* 是否启用音频 */
+HI_BOOL                 bEnableAudio;        /* Whether to enable the audio. */
+/* HDMI音频源。设置为HI_HDMI_SND_INTERFACE_I2S，需与VO接口保持一致 */
+HI_HDMI_SND_INTERFACE_E enSoundIntf;         /* HDMI audio source.It is set to HI_HDMI_SND_INTERFACE_I2S, which needs to be consistent with the VO interface. */
+/* 多声道或立体声：0表示立体声，1表示八声道（固定为多声道） */
+HI_BOOL                 bIsMultiChannel;     /* Multi-channel or stereo 0: stereo 1: eight-channel fixed for multi-channel */
+/* 音频采样率。该参数需与VO保持一致 */
+HI_HDMI_SAMPLE_RATE_E   enSampleRate;        /* Audio sampling rate. This parameter needs to be consistent with that of the VO. */
+/* 音频降采样率参数。默认为0 */
+HI_U8                   u8DownSampleParm;    /* Audio down sampling rate parameter. It is 0 by default. */
+/* 音频位宽。默认为16位。该参数需与VO保持一致 */
+HI_HDMI_BIT_DEPTH_E     enBitDepth;          /* Audio bit width. It is 16 by default. This parameter needs to be consistent with that of the VO. */
+/* 保留字段，设为0。I2S控制（0x7A:0x1D） */
+HI_U8                   u8I2SCtlVbit;        /* Reserved. It is set to 0. I2S control (0x7A:0x1D) */
+/* 是否启用AVI InfoFrame。建议启用此功能 */
+HI_BOOL                 bEnableAviInfoFrame; /* Whether to enable AVI InfoFrame.It is recommended to enable this function. */
+/* 是否启用AUDIO InfoFrame。建议启用此功能 */
+HI_BOOL                 bEnableAudInfoFrame; /* Whether to enable AUDIO InfoFrame.It is recommended to enable this function. */
+/* 是否启用SPD InfoFrame。建议禁用此功能 */
+HI_BOOL                 bEnableSpdInfoFrame; /* Whether to enable SPD InfoFrame.It is recommended to disable this function. */
+/* 是否启用MPEG InfoFrame。建议禁用此功能 */
+HI_BOOL                 bEnableMpegInfoFrame; /* Whether to enable MPEG InfoFrame.It is recommended to disable this function. */
+/* 是否在HDMI中启用调试信息。建议禁用此功能 */
+HI_BOOL                 bDebugFlag;          /* Whether to enable the debug information in the HDMI.It is recommended to disable this function. */
+/* 是否启用HDCP。0：禁用，1：启用 */
+HI_BOOL                 bHDCPEnable;         /* Whether to enable the HDCP.0: disabled 1: enabled */
+/* 是否启用3D模式。0：禁用，1：启用 */
+HI_BOOL                 b3DEnable;           /* Whether to enable 3D mode. 0: disabled 1: enabled */
+/* 3D参数。默认值为9 */
+HI_U8                   u83DParam;           /* 3D Parameter. The default value is 9. */
+/* 当获取能力失败时，HDMI强制（优先）判断输出视频模式。默认为HI_HDMI_FORCE_HDMI */
+HI_HDMI_FORCE_ACTION_E  enDefaultMode;       /* When get capability fail,HDMI forcily(priority) judgments output video mode.Default is HI_HDMI_FORCE_HDMI. */
+/* 是否启用认证模式。0：禁用，1：启用 */
+HI_BOOL                 bAuthMode;           /* Whether to enable auth mode. 0: disabled 1: enabled */
+/* 视频模式及DVI自适应功能启用标志，当用户设置错误时生效。默认：HI_TRUE。若用户无特殊自适应策略，建议设为HI_TRUE */
+HI_BOOL                 bEnableVidModeAdapt; /* Enable flag of vedio mode & DVI adapting case of user setting incorrect,default:HI_TRUE.When user have no any adapting strategy,suggestion HI_TRUE */
+/* DeepColor模式自适应功能启用标志，当用户设置错误时生效。默认：HI_FALSE。若用户无特殊自适应策略，建议设为HI_TRUE */
+HI_BOOL                 bEnableDeepClrAdapt; /* Enable flag of deep color mode adapting case of user setting incorrect,default: HI_FALSE.When user have no any adapting strategy,suggestion HI_TRUE */
+/* enVideoFmt的像素时钟（单位为kHz）。（仅当enVideoFmt为HI_HDMI_VIDEO_FMT_VESA_CUSTOMER_DEFINE时该参数有效） */
+HI_U32                  u32PixClk;           /* Pixclk of enVideoFmt(unit is kHz).(This param is valid only when enVideoFmt is HI_HDMI_VIDEO_FMT_VESA_CUSTOMER_DEFINE) */
 } HI_HDMI_ATTR_S;
 
 typedef struct hiHI_HDMI_EDID_S {
