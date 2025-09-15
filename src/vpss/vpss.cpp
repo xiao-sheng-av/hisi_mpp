@@ -5,17 +5,25 @@ Hi_Mpp_Vpss::Hi_Mpp_Vpss()
 
 Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
 {
+    //  VPSS和VI解连接
+    ret = UnBind_Vi();
+    if (ret != true)
+    {
+        std::cout << "UnBind_Vi failed!\n";
+    }
+    // 禁用 VPSS 通道。GROUP 必须已创建。
     ret = HI_MPI_VPSS_DisableChn(VpssGrp, VpssChn);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_DisableChn failed!\n";
     }
+    // 禁用 VPSS GROUP。GROUP 必须已创建。
     ret = HI_MPI_VPSS_StopGrp(VpssGrp);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_StopGrp failed!\n";
     }
-
+    // 销毁一个 VPSS GROUP。GROUP 必须已创建。调用此接口之前，必须先调用 HI_MPI_VPSS_StopGrp 禁用此 GROUP。调用此接口时，会一直等待此 GROUP 当前任务处理结束才会真正销毁。
     ret = HI_MPI_VPSS_DestroyGrp(VpssGrp);
     if (ret != HI_SUCCESS)
     {
@@ -25,7 +33,7 @@ Hi_Mpp_Vpss::~Hi_Mpp_Vpss()
 
 bool Hi_Mpp_Vpss::Init()
 {
-
+    // 定义 VPSS GROUP 属性
     VPSS_GRP_ATTR_S stVpssGrpAttr;
     memset_s(&stVpssGrpAttr, sizeof(VPSS_GRP_ATTR_S), 0, sizeof(VPSS_GRP_ATTR_S));
     // 不进行帧率控制
@@ -46,15 +54,16 @@ bool Hi_Mpp_Vpss::Init()
     // NR属性 运动矢量模式 NR_MOTION_MODE_NORMAL为普通模式
     stVpssGrpAttr.stNrAttr.enNrMotionMode = NR_MOTION_MODE_NORMAL;
     // 不支持重复创建。
-    // 创建一个VPSS组
+    // 创建一个VPSS组。不支持重复创建。 对应 HI_MPI_VPSS_DestroyGrp
     ret = HI_MPI_VPSS_CreateGrp(VpssGrp, &stVpssGrpAttr);
     if (HI_SUCCESS != ret)
     {
         std::cout << "HI_MPI_VPSS_CreateGrp false!" << ret << std::endl;
         return false;
     }
-
+    // 定义 VPSS 通道属性
     VPSS_CHN_ATTR_S VpssChnAttr;
+    memset_s(&VpssChnAttr, sizeof(VPSS_CHN_ATTR_S), 0, sizeof(VPSS_CHN_ATTR_S));
     // 宽
     VpssChnAttr.u32Width = 1920;
     // 高
@@ -87,14 +96,14 @@ bool Hi_Mpp_Vpss::Init()
         std::cout << "HI_MPI_VPSS_SetChnAttr failed!\n";
         return false;
     }
-    // GROUP 必须已创建。
+    // 启用 VPSS 通道。GROUP 必须已创建。 对应 HI_MPI_VPSS_DisableChn
     ret = HI_MPI_VPSS_EnableChn(VpssGrp, VpssChn);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_VPSS_EnableChn failed!\n";
         return false;
     }
-    // GROUP 必须已创建。重复调用该函数设置同一个组返回成功。
+    // 启用 VPSS GROUP。GROUP 必须已创建。重复调用该函数设置同一个组返回成功。 对应 HI_MPI_VPSS_StopGrp
     ret = HI_MPI_VPSS_StartGrp(VpssGrp);
     if (ret != HI_SUCCESS)
     {
@@ -104,14 +113,11 @@ bool Hi_Mpp_Vpss::Init()
     return true;
 }
 
-bool Hi_Mpp_Vpss::Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
+bool Hi_Mpp_Vpss::Bind_Vi(const HI_S32 Chn_Id)
 {
-    MPP_CHN_S stSrcChn;
-    MPP_CHN_S stDestChn;
     // VI 和 VDEC 作为数据源，是以通道为发送者，向其他模块发送数据，用户将设备号置为 0，SDK 不检查输入的设备号。
-    // 例程中两个都赋值，并没有将dev赋值为0
     stSrcChn.enModId = HI_ID_VI;
-    stSrcChn.s32DevId = Pipe_Id;
+    stSrcChn.s32DevId = 0;
     stSrcChn.s32ChnId = Chn_Id; // 通道号
     // VPSS 作为数据接收者时，是以设备（GROUP）为接收者，接收其他模块发来的数据，用户将通道号置为 0。
     stDestChn.enModId = HI_ID_VPSS;
@@ -119,6 +125,18 @@ bool Hi_Mpp_Vpss::Bind_Vi(const HI_S32 Pipe_Id, const HI_S32 Chn_Id)
     stDestChn.s32ChnId = 0;       // VPSS通道号
     // 同一个数据接收者只能绑定一个数据源。
     ret = HI_MPI_SYS_Bind(&stSrcChn, &stDestChn);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "HI_MPI_SYS_Bind failed!\n";
+        return false;
+    }
+    return true;
+}
+
+bool Hi_Mpp_Vpss::UnBind_Vi()
+{
+    // 解除VI和VPSS连接
+    ret = HI_MPI_SYS_UnBind(&stSrcChn, &stDestChn);
     if (ret != HI_SUCCESS)
     {
         std::cout << "HI_MPI_SYS_Bind failed!\n";
