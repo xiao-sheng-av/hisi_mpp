@@ -33,7 +33,6 @@ bool Init(Hi_Mpp_Vi & vi, Hi_Mpp_Vpss & vpss, Hi_Mpp_Vo & vo)
 }
 int main()
 {
-
     std::cout << "Hello world" << std::endl;
     Hi_Mpp_Vi vi;
     Hi_Mpp_Vpss vpss;
@@ -45,6 +44,7 @@ int main()
         std::cout << "Init false\n";
         return -1;
     }
+    vpss.Write_Frame();
     std::cout << "\n===========输入回车结束==============\n";
     getchar();
 

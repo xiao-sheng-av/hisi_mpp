@@ -21,7 +21,7 @@ public:
     bool UnBind_Vi();
     HI_S32 Get_ChnId() const { return VpssChn; }
     HI_S32 Get_Grp() const { return VpssGrp; }
-    bool Write_Frame(const VIDEO_FRAME_S *Frame_Info);
+    bool Write_Frame();
 };
 
 #endif

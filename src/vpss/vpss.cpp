@@ -144,3 +144,53 @@ bool Hi_Mpp_Vpss::UnBind_Vi()
     }
     return true;
 }
+
+bool Hi_Mpp_Vpss::Write_Frame()
+{
+    Out_File = fopen("vpss.yuv", "wb");
+    if (Out_File == NULL)
+    {
+        std::cout << "open file failed\n";
+        return false;
+    }
+    VIDEO_FRAME_INFO_S Frame_Info;
+    memset_s(&Frame_Info, sizeof(VIDEO_FRAME_INFO_S), 0, sizeof(VIDEO_FRAME_INFO_S));
+
+    ret = HI_MPI_VPSS_GetChnFrame(VpssGrp, VpssChn, &Frame_Info, -1);
+    if (ret != HI_SUCCESS)
+    {
+        std::cout << "HI_MPI_VPSS_GetChnFrame failed!\n";
+        fclose(Out_File);
+        return false;
+    }
+    // 计算YUV数据大小
+    HI_U32 YUV_Size = Frame_Info.stVFrame.u32Stride[0] * Frame_Info.stVFrame.u32Height * 3 / 2;
+    std::cout << "YUV_Size = " << YUV_Size << std::endl;
+    // 将获取到的物理地址映射到用户空间
+    HI_CHAR *Y = (HI_CHAR *)HI_MPI_SYS_Mmap(Frame_Info.stVFrame.u64PhyAddr[0], YUV_Size);
+    HI_CHAR *UV = Y + Frame_Info.stVFrame.u32Stride[0] * Frame_Info.stVFrame.u32Height;
+    if (Y == NULL)
+    {
+        std::cout << "HI_MPI_SYS_Mmap Y failed!\n";
+        fclose(Out_File);
+        return false;
+    }
+    // 保存Y
+    for (int h = 0; h < Frame_Info.stVFrame.u32Height; h++)
+    {
+        HI_CHAR *pMemContent = Y + h * Frame_Info.stVFrame.u32Stride[0];
+        fwrite(pMemContent, Frame_Info.stVFrame.u32Width, 1, Out_File);
+    }
+    // 保存UV
+    for (int h = 0; h < Frame_Info.stVFrame.u32Height / 2; h++)
+    {
+        HI_CHAR *pMemContent = UV + h * Frame_Info.stVFrame.u32Stride[1];
+        fwrite(pMemContent, Frame_Info.stVFrame.u32Width, 1, Out_File);
+    }
+    // 释放映射的用户空间地址
+    HI_MPI_SYS_Munmap(Y, YUV_Size);
+    // 不释放会导致VB忙
+    HI_MPI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &Frame_Info);
+    fclose(Out_File);
+    return true;
+}
