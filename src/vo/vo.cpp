@@ -27,7 +27,7 @@ Hi_Mpp_Vo::~Hi_Mpp_Vo()
     {
         std::cout << "HI_MPI_VO_DisableVideoLayer failed!\n";
     }
-
+    // 禁用视频输出设备。设备禁止前必须先禁止该设备上的视频层。
     ret = HI_MPI_VO_Disable(VoDev);
     if (ret != HI_SUCCESS)
     {
@@ -59,6 +59,7 @@ bool Hi_Mpp_Vo::Init()
         return false;
     }
     // 启用视频输出设备。在调用设备使能前，必须对设备公共属性进行配置，否则返回设备未配置错误。
+    // 对应 HI_MPI_VO_Disable 。
     ret = HI_MPI_VO_Enable(VoDev);
     if (ret != HI_SUCCESS)
     {
@@ -109,6 +110,7 @@ bool Hi_Mpp_Vo::Init()
         return false;
     }
     // 使能视频层。视频层使能前必须保证该视频层所绑定的设备处于使能状态( HI_MPI_VO_Enable 之后调用)。视频层使能前必须保证该视频层已经配置 ( HI_MPI_VO_SetVideoLayerAttr之后)。
+    // 对应 HI_MPI_VO_DisableVideoLayer 。
     ret = HI_MPI_VO_EnableVideoLayer(VoLayer);
     if (ret != HI_SUCCESS)
     {
@@ -141,6 +143,7 @@ bool Hi_Mpp_Vo::Init()
         return false;
     }
     // 启用指定的视频输出通道。调用前必须保证视频层绑定关系存在(3516dv300不需要使用 HI_MPI_VO_BindVideoLayer )，否则将返回失败。调用前必须使能相应设备上的视频层。通道使能前必须进行通道配置，否则返回通道未配置的错误。
+    // 对应 HI_MPI_VO_DisableChn 。
     ret = HI_MPI_VO_EnableChn(VoLayer, VoChn);
     if (ret != HI_SUCCESS)
     {
@@ -195,7 +198,7 @@ bool Hi_Mpp_Vo::Init()
         std::cout << "HI_MPI_HDMI_SetAttr failed!\n";
         return false;
     }
-    // 启动指定的HDMI，使能其送显能力。 HI_MPI_HDMI_Start 接口被调用前必须先调用 HI_MPI_HDMI_Open 接口来打开对应的HDMI，且需要保持两个接口入参中的 HI_HDMI_ID_E 参数值一致
+    // 启动指定的HDMI，使能其送显能力。 HI_MPI_HDMI_Start 接口被调用前必须先调用 HI_MPI_HDMI_Open 接口来打开对应的HDMI，且需要保持两个接口入参中的 HI_HDMI_ID_E 参数值一致。对应 HI_MPI_HDMI_Stop 。
     ret = HI_MPI_HDMI_Start(enHdmiId);
     if (HI_SUCCESS != ret)
     {
